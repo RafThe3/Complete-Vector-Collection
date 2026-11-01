@@ -49,9 +49,9 @@ class Collection
     bool clear();
 
     // Replacement
-    bool replace(const T& newVal, const T& oldVal);
+    bool replace(const T& oldVal, const T& newVal);
     bool replaceAt(const T& item, std::size_t index);
-    bool swap(const T& newVal, const T& oldVal);
+    bool swap(const T& oldVal, const T& newVal);
     bool swapAt(const T& item, std::size_t index);
 
     // Searching
@@ -70,8 +70,8 @@ class Collection
     std::string toString() const;
 
     // Saving and Loading
-    void save(const std::string& filename) const;
-    void load(const std::string& filename);
+    bool save(const std::string& filename) const;
+    bool load(const std::string& filename);
 };
 
 #pragma region Insertion
@@ -299,7 +299,7 @@ inline bool Collection<T>::clear()
 // Replaces oldVal with newVal, provided oldVal exists and newVal is not already present.
 // Neighbor comparisons determine whether a previously sorted collection remains sorted.
 template <typename T>
-inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
+inline bool Collection<T>::replace(const T& oldVal, const T& newVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -347,7 +347,7 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 
 // Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
 template <typename T>
-inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
+inline bool Collection<T>::swap(const T& oldVal, const T& newVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -661,20 +661,21 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
 
 #pragma endregion
 
-#pragma region Saving and loading
+#pragma region Saving and Loading
 
-// -------------------Saving and loading----------------------
+// -------------------Saving and Loading----------------------
 
 // Writes one value per line. Strings are quoted to preserve whitespace and special characters.
 // Floating-point output uses enough significant digits for a precision-preserving round trip.
 template <typename T>
-inline void Collection<T>::save(const std::string& filename) const
+inline bool Collection<T>::save(const std::string& filename) const
 {
     std::ofstream file(filename);
 
     if (!file)
     {
-        throw std::runtime_error("Unable to open file");
+        //throw std::runtime_error("Unable to open file");
+        return false;
     }
 
     // max_digits10 preserves enough significant digits to reload floating-point values accurately.
@@ -699,20 +700,24 @@ inline void Collection<T>::save(const std::string& filename) const
 
     if (!file)
     {
-        throw std::runtime_error("Error writing file");
+        //throw std::runtime_error("Error writing file");
+        return false;
     }
+
+    return true;
 }
 
 // Reads into a temporary vector so current contents are not replaced until reading succeeds.
 // Duplicate values are ignored, and sorted state is recalculated after loading.
 template <typename T>
-inline void Collection<T>::load(const std::string& filename)
+inline bool Collection<T>::load(const std::string& filename)
 {
     std::ifstream file(filename);
 
     if (!file)
     {
-        throw std::runtime_error("Unable to open file");
+        //throw std::runtime_error("Unable to open file");
+        return false;
     }
 
     // Build replacement contents separately; items is updated only after reading succeeds.
@@ -721,11 +726,18 @@ inline void Collection<T>::load(const std::string& filename)
 
     while (true)
     {
+        // Stop if the previous extraction already reached EOF.
+        if (file.eof())
+        {
+            break;
+        }
+
         file >> std::ws;
 
         if (file.bad())
         {
-            throw std::runtime_error("Error reading file");
+            //throw std::runtime_error("Error reading file");
+            return false;
         }
 
         if (file.eof())
@@ -735,21 +747,24 @@ inline void Collection<T>::load(const std::string& filename)
 
         if (!file)
         {
-            throw std::runtime_error("Error reading file");
+            //throw std::runtime_error("Error reading file");
+            return false;
         }
 
         if constexpr (std::is_same_v<T, std::string>)
         {
             if (!(file >> std::quoted(item)))
             {
-                throw std::runtime_error("Error reading file");
+                //throw std::runtime_error("Error reading file");
+                return false;
             }
         }
         else
         {
             if (!(file >> item))
             {
-                throw std::runtime_error("Error reading file");
+                //throw std::runtime_error("Error reading file");
+                return false;
             }
         }
 
@@ -761,9 +776,16 @@ inline void Collection<T>::load(const std::string& filename)
 
     file.close();
 
+    if (!file)
+    {
+        //throw std::runtime_error("Error reading file");
+        return false;
+    }
+
     // Commit the loaded data, then synchronize the sorted-state flag.
     items.swap(loaded);
     isSorted = std::is_sorted(items.begin(), items.end());
+    return true;
 }
 
 // -----------------------------------------------------------
