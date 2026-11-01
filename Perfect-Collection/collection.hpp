@@ -44,6 +44,9 @@ class Collection
     bool removeAt(std::size_t index);
     bool pop_front(T& out);
     bool pop_back(T& out);
+    bool pop_front();
+    bool pop_back();
+    bool clear();
 
     // Replacement
     bool replace(const T& newVal, const T& oldVal);
@@ -62,7 +65,6 @@ class Collection
     // Global
     const T& front() const;
     const T& back() const;
-    bool clear();
     bool isEmpty() const;
     std::size_t getSize() const;
     std::string toString() const;
@@ -240,6 +242,50 @@ inline bool Collection<T>::pop_back(T& out)
     }
 
     return false;
+}
+
+// Removes the first value out of the collection.
+template <typename T>
+inline bool Collection<T>::pop_front()
+{
+    if (!isEmpty())
+    {
+        items.erase(items.begin());
+        if (getSize() <= 1)
+        {
+            isSorted = true;
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+// Removes the last value out of the collection.
+template <typename T>
+inline bool Collection<T>::pop_back()
+{
+    if (!isEmpty())
+    {
+        items.pop_back();
+        if (getSize() <= 1)
+        {
+            isSorted = true;
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+// Removes every value, restores the empty collection sorted state, and reports whether it changed.
+template <typename T>
+inline bool Collection<T>::clear()
+{
+    std::size_t originalSize = getSize();
+    items.clear();
+    isSorted = true;
+    return getSize() < originalSize;
 }
 
 // -----------------------------------------------------------
@@ -754,16 +800,6 @@ inline const T& Collection<T>::back() const
     {
         throw std::out_of_range("Empty vector");
     }
-}
-
-// Removes every value, restores the empty collection sorted state, and reports whether it changed.
-template <typename T>
-inline bool Collection<T>::clear()
-{
-    std::size_t originalSize = getSize();
-    items.clear();
-    isSorted = true;
-    return getSize() < originalSize;
 }
 
 // Returns true when the underlying vector contains no elements.
