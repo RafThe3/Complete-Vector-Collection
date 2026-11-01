@@ -76,11 +76,14 @@ class Collection
 
 // ------------------------Insertion--------------------------
 
+// Inserts a unique value at the beginning of the collection.
+// The sorted-state flag is updated by comparing the new first value with the old first value.
 template <typename T>
 inline bool Collection<T>::push_front(const T& item)
 {
     if (!contains(item))
     {
+        // An empty collection is sorted; otherwise check whether the new front preserves order.
         if (isEmpty())
         {
             isSorted = true;
@@ -97,11 +100,14 @@ inline bool Collection<T>::push_front(const T& item)
     return false;
 }
 
+// Appends a unique value to the collection.
+// Appending a value smaller than the previous last value breaks ascending order.
 template <typename T>
 inline bool Collection<T>::push_back(const T& item)
 {
     if (!contains(item))
     {
+        // An empty collection is sorted; otherwise check whether the new back preserves order.
         if (isEmpty())
         {
             isSorted = true;
@@ -118,6 +124,8 @@ inline bool Collection<T>::push_back(const T& item)
     return false;
 }
 
+// Inserts a unique value at the requested position.
+// An arbitrary position can disrupt ordering, so the collection is marked unsorted.
 template <typename T>
 inline bool Collection<T>::insert(const T& item, std::size_t index)
 {
@@ -131,6 +139,8 @@ inline bool Collection<T>::insert(const T& item, std::size_t index)
     return false;
 }
 
+// Inserts a unique value into its correct position in an already sorted collection.
+// lower_bound finds the first position whose value is not less than the new value.
 template <typename T>
 inline bool Collection<T>::insertSorted(const T& item)
 {
@@ -158,6 +168,7 @@ inline bool Collection<T>::insertSorted(const T& item)
 
 // -------------------------Deletion--------------------------
 
+// Finds and removes a value. getSize() is the sentinel returned when search misses.
 template <typename T>
 inline bool Collection<T>::remove(const T& item)
 {
@@ -168,7 +179,7 @@ inline bool Collection<T>::remove(const T& item)
     if (index != getSize())
     {
         items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
-        if (items.size() <= 1)
+        if (getSize() <= 1)
         {
             isSorted = true;
         }
@@ -178,13 +189,14 @@ inline bool Collection<T>::remove(const T& item)
     return false;
 }
 
+// Removes the value at index when the index is within the collection bounds.
 template <typename T>
 inline bool Collection<T>::removeAt(std::size_t index)
 {
     if (index < getSize())
     {
         items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
-        if (items.size() <= 1)
+        if (getSize() <= 1)
         {
             isSorted = true;
         }
@@ -194,14 +206,15 @@ inline bool Collection<T>::removeAt(std::size_t index)
     return false;
 }
 
+// Copies the first value to out, then removes it from the collection.
 template <typename T>
 inline bool Collection<T>::pop_front(T& out)
 {
     if (!isEmpty())
     {
-        out = items[0];
+        out = front();
         items.erase(items.begin());
-        if (items.size() <= 1)
+        if (getSize() <= 1)
         {
             isSorted = true;
         }
@@ -211,6 +224,7 @@ inline bool Collection<T>::pop_front(T& out)
     return false;
 }
 
+// Copies the last value to out, then removes it from the collection.
 template <typename T>
 inline bool Collection<T>::pop_back(T& out)
 {
@@ -218,7 +232,7 @@ inline bool Collection<T>::pop_back(T& out)
     {
         out = back();
         items.pop_back();
-        if (items.size() <= 1)
+        if (getSize() <= 1)
         {
             isSorted = true;
         }
@@ -236,6 +250,8 @@ inline bool Collection<T>::pop_back(T& out)
 
 // ----------------------Replacement--------------------------
 
+// Replaces oldVal with newVal, provided oldVal exists and newVal is not already present.
+// Neighbor comparisons determine whether a previously sorted collection remains sorted.
 template <typename T>
 inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
 {
@@ -246,6 +262,7 @@ inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
     {
         if (isSorted)
         {
+            // The new value must fit between its neighbors to preserve ascending order.
             bool orderedBefore = oldIndex == 0 || items[oldIndex - 1] < newVal;
             bool orderedAfter = oldIndex + 1 == getSize() || newVal < items[oldIndex + 1];
 
@@ -259,6 +276,8 @@ inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
     return false;
 }
 
+// Replaces the value at index, provided the index is valid and item is not already present.
+// Neighbor comparisons preserve the sorted-state flag when the replacement fits in order.
 template <typename T>
 inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 {
@@ -266,6 +285,7 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
     {
         if (isSorted)
         {
+            // The new value must fit between its neighbors to preserve ascending order.
             bool orderedBefore = index == 0 || items[index - 1] < item;
             bool orderedAfter = index + 1 == getSize() || item < items[index + 1];
 
@@ -279,6 +299,7 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
     return false;
 }
 
+// Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
 template <typename T>
 inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
 {
@@ -299,6 +320,7 @@ inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
     return false;
 }
 
+// Exchanges the position of item with the value at index, after validating both positions.
 template <typename T>
 inline bool Collection<T>::swapAt(const T& item, std::size_t index)
 {
@@ -326,6 +348,7 @@ inline bool Collection<T>::swapAt(const T& item, std::size_t index)
 
 // ------------------------Searching--------------------------
 
+// Reports whether item is present, using the collection current search strategy.
 template <typename T>
 inline bool Collection<T>::contains(const T& item) const
 {
@@ -333,6 +356,7 @@ inline bool Collection<T>::contains(const T& item) const
     return found != getSize();
 }
 
+// Returns a read-only reference to the value at index; throws when index is out of range.
 template <typename T>
 inline const T& Collection<T>::at(std::size_t index) const
 {
@@ -344,6 +368,8 @@ inline const T& Collection<T>::at(std::size_t index) const
     throw std::out_of_range("Index out of range");
 }
 
+// Selects binary search for sorted data and linear search for unsorted data.
+// Both search algorithms return getSize() when the value is not present.
 template <typename T>
 inline std::size_t Collection<T>::search(const T& item) const
 {
@@ -352,6 +378,7 @@ inline std::size_t Collection<T>::search(const T& item) const
 
 #pragma region Search Algorithms
 
+// Checks each element in order and returns the first matching index.
 template <typename T>
 inline std::size_t Collection<T>::linearSearch(const T& item) const
 {
@@ -366,9 +393,12 @@ inline std::size_t Collection<T>::linearSearch(const T& item) const
     return getSize();
 }
 
+// Uses a lower-bound search over the half-open range [low, high).
+// Equality then confirms whether the value at the insertion position is a match.
 template <typename T>
 inline std::size_t Collection<T>::binarySearch(const T& item) const
 {
+    // high is exclusive, so the active binary-search interval is [low, high).
     std::size_t low = 0;
     std::size_t high = getSize();
 
@@ -404,6 +434,8 @@ inline std::size_t Collection<T>::binarySearch(const T& item) const
 
 // ------------------------Sorting----------------------------
 
+// Sorts only when the sorted-state flag indicates that sorting is needed.
+// The algorithm is selected by collection size; sorting restores the sorted-state flag.
 template <typename T>
 inline bool Collection<T>::sort()
 {
@@ -439,6 +471,7 @@ inline bool Collection<T>::sort()
 
 #pragma region Sorting Algorithms
 
+// Grows a sorted prefix by inserting each next value into its correct position.
 template <typename T>
 inline void Collection<T>::insertionSort(std::vector<T> &v)
 {
@@ -455,6 +488,7 @@ inline void Collection<T>::insertionSort(std::vector<T> &v)
     }
 }
 
+// Applies quicksort to the inclusive range [low, high], using the last value as pivot.
 template <typename T>
 inline void Collection<T>::quickSort(std::vector<T> &v, std::size_t low, std::size_t high)
 {
@@ -497,6 +531,7 @@ inline void Collection<T>::quickSort(std::vector<T> &v, std::size_t low, std::si
     quickSort(v, i + 1, high);
 }
 
+// Recursively divides the vector, sorts each half, and merges the halves in order.
 template <typename T>
 inline void Collection<T>::mergeSort(std::vector<T> &v)
 {
@@ -584,6 +619,8 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
 
 // -------------------Saving and loading----------------------
 
+// Writes one value per line. Strings are quoted to preserve whitespace and special characters.
+// Floating-point output uses enough significant digits for a precision-preserving round trip.
 template <typename T>
 inline void Collection<T>::save(const std::string& filename) const
 {
@@ -594,6 +631,7 @@ inline void Collection<T>::save(const std::string& filename) const
         throw std::runtime_error("Unable to open file");
     }
 
+    // max_digits10 preserves enough significant digits to reload floating-point values accurately.
     if constexpr (std::is_floating_point_v<T>)
     {
         file << std::setprecision(std::numeric_limits<T>::max_digits10);
@@ -619,6 +657,8 @@ inline void Collection<T>::save(const std::string& filename) const
     }
 }
 
+// Reads into a temporary vector so current contents are not replaced until reading succeeds.
+// Duplicate values are ignored, and sorted state is recalculated after loading.
 template <typename T>
 inline void Collection<T>::load(const std::string& filename)
 {
@@ -629,6 +669,7 @@ inline void Collection<T>::load(const std::string& filename)
         throw std::runtime_error("Unable to open file");
     }
 
+    // Build replacement contents separately; items is updated only after reading succeeds.
     std::vector<T> loaded;
     T item;
 
@@ -674,6 +715,7 @@ inline void Collection<T>::load(const std::string& filename)
 
     file.close();
 
+    // Commit the loaded data, then synchronize the sorted-state flag.
     items.swap(loaded);
     isSorted = std::is_sorted(items.begin(), items.end());
 }
@@ -686,6 +728,7 @@ inline void Collection<T>::load(const std::string& filename)
 
 // ------------------------Global-----------------------------
 
+// Returns a read-only reference to the first value; throws if the collection is empty.
 template <typename T>
 inline const T& Collection<T>::front() const
 {
@@ -699,6 +742,7 @@ inline const T& Collection<T>::front() const
     }
 }
 
+// Returns a read-only reference to the last value; throws if the collection is empty.
 template <typename T>
 inline const T& Collection<T>::back() const
 {
@@ -712,6 +756,7 @@ inline const T& Collection<T>::back() const
     }
 }
 
+// Removes every value, restores the empty collection sorted state, and reports whether it changed.
 template <typename T>
 inline bool Collection<T>::clear()
 {
@@ -721,18 +766,21 @@ inline bool Collection<T>::clear()
     return getSize() < originalSize;
 }
 
+// Returns true when the underlying vector contains no elements.
 template <typename T>
 inline bool Collection<T>::isEmpty() const
 {
     return items.empty();
 }
 
+// Returns the number of values currently stored in the collection.
 template <typename T>
 inline std::size_t Collection<T>::getSize() const
 {
     return items.size();
 }
 
+// Builds a space-separated string representation of the collection.
 template <typename T>
 inline std::string Collection<T>::toString() const
 {
