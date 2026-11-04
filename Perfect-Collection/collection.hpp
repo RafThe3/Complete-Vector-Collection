@@ -299,7 +299,7 @@ inline bool Collection<T>::clear()
 // Replaces oldVal with newVal, provided oldVal exists and newVal is not already present.
 // Neighbor comparisons determine whether a previously sorted collection remains sorted.
 template <typename T>
-inline bool Collection<T>::replace(const T& oldVal, const T& newVal)
+inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -347,7 +347,7 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 
 // Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
 template <typename T>
-inline bool Collection<T>::swap(const T& oldVal, const T& newVal)
+inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
