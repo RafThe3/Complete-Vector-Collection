@@ -654,6 +654,7 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
         rightIndex++;
     }
 
+    // Free the vectors to preserve space in memory
     free(left);
     free(right);
 }
