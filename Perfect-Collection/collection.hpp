@@ -653,6 +653,9 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
         arrayIndex++;
         rightIndex++;
     }
+
+    free(left);
+    free(right);
 }
 
 #pragma endregion
