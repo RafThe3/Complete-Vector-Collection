@@ -1,1 +1,3 @@
 # Perfect-Collection
+
+This project attempts to create a "perfect" collection system, which is defined to be a collection system with all the readily available functions and implementations to use in .cpp programs. The collection includes STL libraries, standard ADT behaviors, such as list, stack, and queue behaviors, and basic exception handling.
