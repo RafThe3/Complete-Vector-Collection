@@ -51,6 +51,8 @@ class Collection
     // Replacement
     bool replace(const T& oldVal, const T& newVal);
     bool replaceAt(const T& item, std::size_t index);
+
+    // Swapping
     bool swap(const T& oldVal, const T& newVal);
     bool swapAt(const T& item, std::size_t index);
 
@@ -344,6 +346,10 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 
     return false;
 }
+
+// -----------------------------------------------------------
+
+// ----------------------Swapping-----------------------------
 
 // Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
 template <typename T>
