@@ -502,11 +502,7 @@ inline bool Collection<T>::sort()
     {
         insertionSort(items);
     }
-    else if (50 < size && size <= 150000)
-    {
-        quickSort(items, 0, size - 1);
-    }
-    else if (size > 150000)
+    else
     {
         mergeSort(items);
     }
@@ -654,7 +650,7 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
         rightIndex++;
     }
 
-    // Free the vectors to preserve space in memory
+    // Free the vectors to preserve space in memory.
     free(left);
     free(right);
 }
