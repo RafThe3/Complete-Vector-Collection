@@ -288,6 +288,7 @@ inline bool Collection<T>::pop_back()
     return false;
 }
 
+// Removes the minimum value in the collection (string containing the first letter lexicographically gets deleted)
 template <typename T>
 inline bool Collection<T>::deleteMin()
 {
@@ -302,11 +303,12 @@ inline bool Collection<T>::deleteMin()
     }
 
     auto elementIter = std::min_element(items.cbegin(), items.cend());
-    auto index = std::distance(items.cbegin, elementIter);
-    std::size_t minElement = static_cast<typename std::size_t>(index);
-    return removeAt(minElement);
+    auto elementIndex = std::distance(items.cbegin(), elementIter);
+    std::size_t minIndex = static_cast<std::size_t>(elementIndex);
+    return removeAt(minIndex);
 }
 
+// Removes the maximum value in the collection (string containing the last letter lexicographically gets deleted)
 template <typename T>
 inline bool Collection<T>::deleteMax()
 {
@@ -320,9 +322,10 @@ inline bool Collection<T>::deleteMax()
         return pop_back();
     }
 
-    const T& maxElement = *std::max_element(items.cbegin(), items.cend());
-    remove(maxElement);
-    return true;
+    auto elementIter = std::max_element(items.cbegin(), items.cend());
+    auto elementIndex = std::distance(items.cbegin(), elementIter);
+    std::size_t maxIndex = static_cast<std::size_t>(elementIndex);
+    return removeAt(maxIndex);
 }
 
 // Removes every value, restores the empty collection sorted state, and reports whether it changed.
@@ -521,6 +524,7 @@ inline std::size_t Collection<T>::binarySearch(const T& item) const
     return getSize();
 }
 
+// Finds the minimum value in the collection (string containing the first letter lexicographically gets returned)
 template <typename T>
 inline const T& Collection<T>::findMin() const
 {
@@ -533,6 +537,7 @@ inline const T& Collection<T>::findMin() const
     return minElement;
 }
 
+// Finds the maximum value in the collection (string containing the last letter lexicographically gets returned)
 template <typename T>
 inline const T& Collection<T>::findMax() const
 {
