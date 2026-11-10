@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <limits>
 
+// A vector collection with most of the useful collection functions.
 template <typename T>
 class Collection
 {
@@ -141,7 +142,7 @@ inline bool Collection<T>::push_back(const T& item)
 template <typename T>
 inline bool Collection<T>::insert(const T& item, std::size_t index)
 {
-    if (!contains(item) && index <= getSize())
+    if (index <= getSize() && !contains(item))
     {
         items.insert(items.begin() + static_cast<typename std::vector<T>::difference_type>(index), item);
         isSorted = false;
@@ -377,7 +378,7 @@ inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
 template <typename T>
 inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 {
-    if (index < getSize() && search(item) == getSize())
+    if (index < getSize() && !contains(item))
     {
         if (sorted())
         {
