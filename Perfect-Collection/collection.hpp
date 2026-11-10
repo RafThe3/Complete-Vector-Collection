@@ -530,7 +530,12 @@ inline const T& Collection<T>::findMin() const
 {
     if (isEmpty())
     {
-        throw std::out_of_range("Collection is empty");
+        throw std::runtime_error("Collection is empty");
+    }
+
+    if (sorted())
+    {
+        return front();
     }
 
     const T& minElement = *std::min_element(items.cbegin(), items.cend());
@@ -543,7 +548,12 @@ inline const T& Collection<T>::findMax() const
 {
     if (isEmpty())
     {
-        throw std::out_of_range("Collection is empty");
+        throw std::runtime_error("Collection is empty");
+    }
+
+    if (sorted())
+    {
+        return back();
     }
 
     const T& maxElement = *std::max_element(items.cbegin(), items.cend());
