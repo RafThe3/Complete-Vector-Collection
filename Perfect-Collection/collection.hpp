@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <iterator>
 #include <utility>
 #include <stdexcept>
 #include <iomanip>
@@ -16,8 +17,10 @@ template <typename T>
 class Collection
 {
     private:
+
     std::vector<T> items;
     bool isSorted = true;
+    T min, max;
 
     // Searching
     std::size_t linearSearch(const T& item) const;
@@ -46,6 +49,8 @@ class Collection
     bool pop_back(T& out);
     bool pop_front();
     bool pop_back();
+    bool deleteMin();
+    bool deleteMax();
     bool clear();
 
     // Replacement
@@ -60,6 +65,8 @@ class Collection
     bool contains(const T& item) const;
     const T& at(std::size_t index) const;
     std::size_t search(const T& item) const;
+    const T& findMin() const;
+    const T& findMax() const;
 
     // Sorting
     bool sort();
@@ -68,6 +75,7 @@ class Collection
     const T& front() const;
     const T& back() const;
     bool isEmpty() const;
+    bool sorted() const;
     std::size_t getSize() const;
     std::string toString() const;
 
@@ -148,7 +156,7 @@ inline bool Collection<T>::insert(const T& item, std::size_t index)
 template <typename T>
 inline bool Collection<T>::insertSorted(const T& item)
 {
-    if (!isSorted)
+    if (!sorted())
     {
         return false;
     }
@@ -280,6 +288,43 @@ inline bool Collection<T>::pop_back()
     return false;
 }
 
+template <typename T>
+inline bool Collection<T>::deleteMin()
+{
+    if (isEmpty())
+    {
+        return false;
+    }
+
+    if (sorted())
+    {
+        return pop_front();
+    }
+
+    auto elementIter = std::min_element(items.cbegin(), items.cend());
+    auto index = std::distance(items.cbegin, elementIter);
+    std::size_t minElement = static_cast<typename std::size_t>(index);
+    return removeAt(minElement);
+}
+
+template <typename T>
+inline bool Collection<T>::deleteMax()
+{
+    if (isEmpty())
+    {
+        return false;
+    }
+
+    if (sorted())
+    {
+        return pop_back();
+    }
+
+    const T& maxElement = *std::max_element(items.cbegin(), items.cend());
+    remove(maxElement);
+    return true;
+}
+
 // Removes every value, restores the empty collection sorted state, and reports whether it changed.
 template <typename T>
 inline bool Collection<T>::clear()
@@ -308,7 +353,7 @@ inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
 
     if (newIndex == getSize() && oldIndex != getSize())
     {
-        if (isSorted)
+        if (sorted())
         {
             // The new value must fit between its neighbors to preserve ascending order.
             bool orderedBefore = oldIndex == 0 || items[oldIndex - 1] < newVal;
@@ -331,7 +376,7 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 {
     if (index < getSize() && search(item) == getSize())
     {
-        if (isSorted)
+        if (sorted())
         {
             // The new value must fit between its neighbors to preserve ascending order.
             bool orderedBefore = index == 0 || items[index - 1] < item;
@@ -476,6 +521,30 @@ inline std::size_t Collection<T>::binarySearch(const T& item) const
     return getSize();
 }
 
+template <typename T>
+inline const T& Collection<T>::findMin() const
+{
+    if (isEmpty())
+    {
+        throw std::out_of_range("Collection is empty");
+    }
+
+    const T& minElement = *std::min_element(items.cbegin(), items.cend());
+    return minElement;
+}
+
+template <typename T>
+inline const T& Collection<T>::findMax() const
+{
+    if (isEmpty())
+    {
+        throw std::out_of_range("Collection is empty");
+    }
+
+    const T& maxElement = *std::max_element(items.cbegin(), items.cend());
+    return maxElement;
+}
+
 #pragma endregion
 
 // -----------------------------------------------------------
@@ -491,7 +560,7 @@ inline std::size_t Collection<T>::binarySearch(const T& item) const
 template <typename T>
 inline bool Collection<T>::sort()
 {
-    if (isSorted)
+    if (sorted())
     {
         return false;
     }
@@ -655,10 +724,6 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
         arrayIndex++;
         rightIndex++;
     }
-
-    // Free the vectors to preserve space in memory.
-    free(left);
-    free(right);
 }
 
 #pragma endregion
@@ -835,6 +900,13 @@ template <typename T>
 inline bool Collection<T>::isEmpty() const
 {
     return items.empty();
+}
+
+// Returns true when the underlying vector is sorted.
+template <typename T>
+inline bool Collection<T>::sorted() const
+{
+    return isSorted;
 }
 
 // Returns the number of values currently stored in the collection.
