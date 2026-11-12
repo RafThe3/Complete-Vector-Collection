@@ -13,8 +13,10 @@
 #include <type_traits>
 #include <limits>
 
+enum class DuplicatePolicy {Allow, Unique};
+
 // A vector collection with most of the useful collection functions.
-template <typename T>
+template <typename T, DuplicatePolicy D = DuplicatePolicy::Unique>
 class Collection
 {
     private:
@@ -89,73 +91,90 @@ class Collection
 
 // ------------------------Insertion--------------------------
 
-// Inserts a unique value at the beginning of the collection.
+// Inserts either a unique or duplicate value at the beginning of the collection, depending on the duplication policy.
 // The sorted-state flag is updated by comparing the new first value with the old first value.
-template <typename T>
-inline bool Collection<T>::push_front(const T& item)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::push_front(const T& item)
 {
-    if (!contains(item))
+    // Check if the collection allows duplicates.
+    if constexpr (D == DuplicatePolicy::Unique)
     {
-        // An empty collection is sorted; otherwise check whether the new front preserves order.
-        if (isEmpty())
+        if (contains(item))
         {
-            isSorted = true;
+            return false;
         }
-        else if (front() < item)
-        {
-            isSorted = false;
-        }
-
-        items.insert(items.begin(), item);
-        return true;
-    }
-    
-    return false;
-}
-
-// Appends a unique value to the collection.
-// Appending a value smaller than the previous last value breaks ascending order.
-template <typename T>
-inline bool Collection<T>::push_back(const T& item)
-{
-    if (!contains(item))
-    {
-        // An empty collection is sorted; otherwise check whether the new back preserves order.
-        if (isEmpty())
-        {
-            isSorted = true;
-        }
-        else if (item < back())
-        {
-            isSorted = false;
-        }
-
-        items.push_back(item);
-        return true;
     }
 
-    return false;
-}
-
-// Inserts a unique value at the requested position.
-// An arbitrary position can disrupt ordering, so the collection is marked unsorted.
-template <typename T>
-inline bool Collection<T>::insert(const T& item, std::size_t index)
-{
-    if (index <= getSize() && !contains(item))
+    // An empty collection is sorted; otherwise check whether the new front preserves order.
+    if (isEmpty())
     {
-        items.insert(items.begin() + static_cast<typename std::vector<T>::difference_type>(index), item);
+        isSorted = true;
+    }
+    else if (front() < item)
+    {
         isSorted = false;
-        return true;
     }
-    
-    return false;
+
+    items.insert(items.begin(), item);
+    return true;
+}
+
+// Appends a unique or duplicate value to the collection, depending on the duplication policy.
+// Appending a value smaller than the previous last value breaks ascending order.
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::push_back(const T& item)
+{
+    // Check if the collection allows duplicates.
+    if constexpr (D == DuplicatePolicy::Unique)
+    {
+        if (contains(item))
+        {
+            return false;
+        }
+    }
+
+    // An empty collection is sorted; otherwise check whether the new back preserves order.
+    if (isEmpty())
+    {
+        isSorted = true;
+    }
+    else if (item < back())
+    {
+        isSorted = false;
+    }
+
+    items.push_back(item);
+    return true;
+}
+
+// Inserts a unique or duplicate value at the requested position, depending on the duplication policy.
+// An arbitrary position can disrupt ordering, so the collection is marked unsorted.
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::insert(const T& item, std::size_t index)
+{
+    // Check if the collection allows duplicates.
+    if constexpr (D == DuplicatePolicy::Unique)
+    {
+        if (contains(item))
+        {
+            return false;
+        }
+    }
+
+    if (index > getSize())
+    {
+        return false;
+    }
+
+    items.insert(items.begin() + static_cast<typename std::vector<T>::difference_type>(index), item);
+    isSorted = false;
+    return true;
 }
 
 // Inserts a unique value into its correct position in an already sorted collection.
 // lower_bound finds the first position whose value is not less than the new value.
-template <typename T>
-inline bool Collection<T>::insertSorted(const T& item)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::insertSorted(const T& item)
 {
     if (!sorted())
     {
@@ -182,8 +201,8 @@ inline bool Collection<T>::insertSorted(const T& item)
 // -------------------------Deletion--------------------------
 
 // Finds and removes a value. getSize() is the sentinel returned when search misses.
-template <typename T>
-inline bool Collection<T>::remove(const T& item)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::remove(const T& item)
 {
     // checks if the value already exists. if so, remove it
 
@@ -203,8 +222,8 @@ inline bool Collection<T>::remove(const T& item)
 }
 
 // Removes the value at index when the index is within the collection bounds.
-template <typename T>
-inline bool Collection<T>::removeAt(std::size_t index)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::removeAt(std::size_t index)
 {
     if (index < getSize())
     {
@@ -220,8 +239,8 @@ inline bool Collection<T>::removeAt(std::size_t index)
 }
 
 // Copies the first value to out, then removes it from the collection.
-template <typename T>
-inline bool Collection<T>::pop_front(T& out)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::pop_front(T& out)
 {
     if (!isEmpty())
     {
@@ -238,8 +257,8 @@ inline bool Collection<T>::pop_front(T& out)
 }
 
 // Copies the last value to out, then removes it from the collection.
-template <typename T>
-inline bool Collection<T>::pop_back(T& out)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::pop_back(T& out)
 {
     if (!isEmpty())
     {
@@ -256,8 +275,8 @@ inline bool Collection<T>::pop_back(T& out)
 }
 
 // Removes the first value out of the collection.
-template <typename T>
-inline bool Collection<T>::pop_front()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::pop_front()
 {
     if (!isEmpty())
     {
@@ -273,8 +292,8 @@ inline bool Collection<T>::pop_front()
 }
 
 // Removes the last value out of the collection.
-template <typename T>
-inline bool Collection<T>::pop_back()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::pop_back()
 {
     if (!isEmpty())
     {
@@ -290,8 +309,8 @@ inline bool Collection<T>::pop_back()
 }
 
 // Removes the minimum value in the collection (string containing the first letter lexicographically gets deleted)
-template <typename T>
-inline bool Collection<T>::deleteMin()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::deleteMin()
 {
     if (isEmpty())
     {
@@ -310,8 +329,8 @@ inline bool Collection<T>::deleteMin()
 }
 
 // Removes the maximum value in the collection (string containing the last letter lexicographically gets deleted)
-template <typename T>
-inline bool Collection<T>::deleteMax()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::deleteMax()
 {
     if (isEmpty())
     {
@@ -330,8 +349,8 @@ inline bool Collection<T>::deleteMax()
 }
 
 // Removes every value, restores the empty collection sorted state, and reports whether it changed.
-template <typename T>
-inline bool Collection<T>::clear()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::clear()
 {
     std::size_t originalSize = getSize();
     items.clear();
@@ -349,8 +368,8 @@ inline bool Collection<T>::clear()
 
 // Replaces oldVal with newVal, provided oldVal exists and newVal is not already present.
 // Neighbor comparisons determine whether a previously sorted collection remains sorted.
-template <typename T>
-inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::replace(const T& newVal, const T& oldVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -375,8 +394,8 @@ inline bool Collection<T>::replace(const T& newVal, const T& oldVal)
 
 // Replaces the value at index, provided the index is valid and item is not already present.
 // Neighbor comparisons preserve the sorted-state flag when the replacement fits in order.
-template <typename T>
-inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::replaceAt(const T& item, std::size_t index)
 {
     if (index < getSize() && !contains(item))
     {
@@ -401,8 +420,8 @@ inline bool Collection<T>::replaceAt(const T& item, std::size_t index)
 // ----------------------Swapping-----------------------------
 
 // Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
-template <typename T>
-inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::swap(const T& newVal, const T& oldVal)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -422,8 +441,8 @@ inline bool Collection<T>::swap(const T& newVal, const T& oldVal)
 }
 
 // Exchanges the position of item with the value at index, after validating both positions.
-template <typename T>
-inline bool Collection<T>::swapAt(const T& item, std::size_t index)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::swapAt(const T& item, std::size_t index)
 {
     std::size_t found = search(item);
 
@@ -450,16 +469,16 @@ inline bool Collection<T>::swapAt(const T& item, std::size_t index)
 // ------------------------Searching--------------------------
 
 // Reports whether item is present, using the collection current search strategy.
-template <typename T>
-inline bool Collection<T>::contains(const T& item) const
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::contains(const T& item) const
 {
     std::size_t found = search(item);
     return found != getSize();
 }
 
 // Returns a read-only reference to the value at index; throws when index is out of range.
-template <typename T>
-inline const T& Collection<T>::at(std::size_t index) const
+template <typename T, DuplicatePolicy D>
+inline const T& Collection<T, D>::at(std::size_t index) const
 {
     if (index < getSize())
     {
@@ -471,8 +490,8 @@ inline const T& Collection<T>::at(std::size_t index) const
 
 // Selects binary search for sorted data and linear search for unsorted data.
 // Both search algorithms return getSize() when the value is not present.
-template <typename T>
-inline std::size_t Collection<T>::search(const T& item) const
+template <typename T, DuplicatePolicy D>
+inline std::size_t Collection<T, D>::search(const T& item) const
 {
     return isSorted ? binarySearch(item) : linearSearch(item);
 }
@@ -480,8 +499,8 @@ inline std::size_t Collection<T>::search(const T& item) const
 #pragma region Search Algorithms
 
 // Checks each element in order and returns the first matching index.
-template <typename T>
-inline std::size_t Collection<T>::linearSearch(const T& item) const
+template <typename T, DuplicatePolicy D>
+inline std::size_t Collection<T, D>::linearSearch(const T& item) const
 {
     for (std::size_t i = 0; i < getSize(); i++)
     {
@@ -496,8 +515,8 @@ inline std::size_t Collection<T>::linearSearch(const T& item) const
 
 // Uses a lower-bound search over the half-open range [low, high).
 // Equality then confirms whether the value at the insertion position is a match.
-template <typename T>
-inline std::size_t Collection<T>::binarySearch(const T& item) const
+template <typename T, DuplicatePolicy D>
+inline std::size_t Collection<T, D>::binarySearch(const T& item) const
 {
     // high is exclusive, so the active binary-search interval is [low, high).
     std::size_t low = 0;
@@ -526,8 +545,8 @@ inline std::size_t Collection<T>::binarySearch(const T& item) const
 }
 
 // Finds the minimum value in the collection (string containing the first letter lexicographically gets returned)
-template <typename T>
-inline const T& Collection<T>::findMin() const
+template <typename T, DuplicatePolicy D>
+inline const T& Collection<T, D>::findMin() const
 {
     if (isEmpty())
     {
@@ -544,8 +563,8 @@ inline const T& Collection<T>::findMin() const
 }
 
 // Finds the maximum value in the collection (string containing the last letter lexicographically gets returned)
-template <typename T>
-inline const T& Collection<T>::findMax() const
+template <typename T, DuplicatePolicy D>
+inline const T& Collection<T, D>::findMax() const
 {
     if (isEmpty())
     {
@@ -573,8 +592,8 @@ inline const T& Collection<T>::findMax() const
 
 // Sorts only when the sorted-state flag indicates that sorting is needed.
 // The algorithm is selected by collection size; sorting restores the sorted-state flag.
-template <typename T>
-inline bool Collection<T>::sort()
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::sort()
 {
     if (sorted())
     {
@@ -605,8 +624,8 @@ inline bool Collection<T>::sort()
 #pragma region Sorting Algorithms
 
 // Grows a sorted prefix by inserting each next value into its correct position.
-template <typename T>
-inline void Collection<T>::insertionSort(std::vector<T> &v)
+template <typename T, DuplicatePolicy D>
+inline void Collection<T, D>::insertionSort(std::vector<T> &v)
 {
     for (std::size_t i = 1; i < v.size(); i++)
     {
@@ -622,8 +641,8 @@ inline void Collection<T>::insertionSort(std::vector<T> &v)
 }
 
 // Applies quicksort to the inclusive range [low, high], using the last value as pivot.
-template <typename T>
-inline void Collection<T>::quickSort(std::vector<T> &v, std::size_t low, std::size_t high)
+template <typename T, DuplicatePolicy D>
+inline void Collection<T, D>::quickSort(std::vector<T> &v, std::size_t low, std::size_t high)
 {
     // Base case: if there is one or zero elements,
     // the portion of the array is already sorted.
@@ -665,8 +684,8 @@ inline void Collection<T>::quickSort(std::vector<T> &v, std::size_t low, std::si
 }
 
 // Recursively divides the vector, sorts each half, and merges the halves in order.
-template <typename T>
-inline void Collection<T>::mergeSort(std::vector<T> &v)
+template <typename T, DuplicatePolicy D>
+inline void Collection<T, D>::mergeSort(std::vector<T> &v)
 {
     // Base case:
     // An array with 0 or 1 elements is already sorted.
@@ -754,8 +773,8 @@ inline void Collection<T>::mergeSort(std::vector<T> &v)
 
 // Writes one value per line. Strings are quoted to preserve whitespace and special characters.
 // Floating-point output uses enough significant digits for a precision-preserving round trip.
-template <typename T>
-inline bool Collection<T>::save(const std::string& filename) const
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::save(const std::string& filename) const
 {
     std::ofstream file(filename);
 
@@ -796,8 +815,8 @@ inline bool Collection<T>::save(const std::string& filename) const
 
 // Reads into a temporary vector so current contents are not replaced until reading succeeds.
 // Duplicate values are ignored, and sorted state is recalculated after loading.
-template <typename T>
-inline bool Collection<T>::load(const std::string& filename)
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::load(const std::string& filename)
 {
     std::ifstream file(filename);
 
@@ -884,8 +903,8 @@ inline bool Collection<T>::load(const std::string& filename)
 // ------------------------Global-----------------------------
 
 // Returns a read-only reference to the first value; throws if the collection is empty.
-template <typename T>
-inline const T& Collection<T>::front() const
+template <typename T, DuplicatePolicy D>
+inline const T& Collection<T, D>::front() const
 {
     if (!isEmpty())
     {
@@ -898,8 +917,8 @@ inline const T& Collection<T>::front() const
 }
 
 // Returns a read-only reference to the last value; throws if the collection is empty.
-template <typename T>
-inline const T& Collection<T>::back() const
+template <typename T, DuplicatePolicy D>
+inline const T& Collection<T, D>::back() const
 {
     if (!isEmpty())
     {
@@ -912,29 +931,29 @@ inline const T& Collection<T>::back() const
 }
 
 // Returns true when the underlying vector contains no elements.
-template <typename T>
-inline bool Collection<T>::isEmpty() const
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::isEmpty() const
 {
     return items.empty();
 }
 
 // Returns true when the underlying vector is sorted.
-template <typename T>
-inline bool Collection<T>::sorted() const
+template <typename T, DuplicatePolicy D>
+inline bool Collection<T, D>::sorted() const
 {
     return isSorted;
 }
 
 // Returns the number of values currently stored in the collection.
-template <typename T>
-inline std::size_t Collection<T>::getSize() const
+template <typename T, DuplicatePolicy D>
+inline std::size_t Collection<T, D>::getSize() const
 {
     return items.size();
 }
 
 // Builds a space-separated string representation of the collection.
-template <typename T>
-inline std::string Collection<T>::toString() const
+template <typename T, DuplicatePolicy D>
+inline std::string Collection<T, D>::toString() const
 {
     std::stringstream ss;
 
