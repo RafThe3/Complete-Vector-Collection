@@ -62,11 +62,11 @@ class Collection
     bool clear();
 
     // Replacement
-    bool replace(const T& oldVal, const T& newVal);
+    bool replace(const T& newVal, const T& oldVal, OccurrenceMode mode = OccurrenceMode::First);
     bool replaceAt(const T& item, std::size_t index);
 
     // Swapping
-    bool swap(const T& oldVal, const T& newVal);
+    bool swap(const T& newVal, const T& oldVal, OccurrenceMode mode = OccurrenceMode::First);
     bool swapAt(const T& item, std::size_t index);
 
     // Searching
@@ -209,7 +209,8 @@ inline bool Collection<T, D>::insertSorted(const T& item)
 
 // -------------------------Deletion--------------------------
 
-// Finds and removes a value. getSize() is the sentinel returned when search misses.
+// Removes either the first occurrence or all occurrences of a value, depending on the specified removal mode.
+// Returns false if the value is not found and updates the sorted-state flag when necessary.
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::remove(const T& item, OccurrenceMode mode)
 {
@@ -223,33 +224,27 @@ inline bool Collection<T, D>::remove(const T& item, OccurrenceMode mode)
         }
 
         items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
+
         if (getSize() <= 1)
         {
             isSorted = true;
         }
+        
         return true;
     }
     else
     {
-        std::size_t index = search(item);
-
-        if (index == getSize())
-        {
-            return false;
-        }
-
-        while (index != getSize())
-        {
-            items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
-            index = search(item);
-        }
+        T temp = item;
+        auto elementIter = std::remove(items.begin(), items.end(), temp);
+        bool removed = elementIter != items.end();
+        items.erase(elementIter, items.end());
 
         if (getSize() <= 1)
         {
             isSorted = true;
         }
 
-        return true;
+        return removed;
     }
 }
 
@@ -357,7 +352,8 @@ inline bool Collection<T, D>::deleteMin()
     auto elementIter = std::min_element(items.cbegin(), items.cend());
     auto elementIndex = std::distance(items.cbegin(), elementIter);
     std::size_t minIndex = static_cast<std::size_t>(elementIndex);
-    return removeAt(minIndex);
+    bool removed = removeAt(minIndex);
+    return removed;
 }
 
 // Removes the maximum value in the collection (string containing the last letter lexicographically gets deleted)
@@ -377,7 +373,8 @@ inline bool Collection<T, D>::deleteMax()
     auto elementIter = std::max_element(items.cbegin(), items.cend());
     auto elementIndex = std::distance(items.cbegin(), elementIter);
     std::size_t maxIndex = static_cast<std::size_t>(elementIndex);
-    return removeAt(maxIndex);
+    bool removed = removeAt(maxIndex);
+    return removed;
 }
 
 // Removes every value, restores the empty collection sorted state, and reports whether it changed.
@@ -387,7 +384,8 @@ inline bool Collection<T, D>::clear()
     std::size_t originalSize = getSize();
     items.clear();
     isSorted = true;
-    return getSize() < originalSize;
+    bool cleared = getSize() < originalSize;
+    return cleared;
 }
 
 // -----------------------------------------------------------
@@ -401,7 +399,7 @@ inline bool Collection<T, D>::clear()
 // Replaces oldVal with newVal, provided oldVal exists and newVal is not already present.
 // Neighbor comparisons determine whether a previously sorted collection remains sorted.
 template <typename T, DuplicatePolicy D>
-inline bool Collection<T, D>::replace(const T& newVal, const T& oldVal)
+inline bool Collection<T, D>::replace(const T& newVal, const T& oldVal, OccurrenceMode mode)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -453,7 +451,7 @@ inline bool Collection<T, D>::replaceAt(const T& item, std::size_t index)
 
 // Exchanges the positions of two existing values. A real exchange may disrupt sorted order.
 template <typename T, DuplicatePolicy D>
-inline bool Collection<T, D>::swap(const T& newVal, const T& oldVal)
+inline bool Collection<T, D>::swap(const T& newVal, const T& oldVal, OccurrenceMode mode)
 {
     std::size_t newIndex = search(newVal);
     std::size_t oldIndex = search(oldVal);
@@ -525,7 +523,8 @@ inline const T& Collection<T, D>::at(std::size_t index) const
 template <typename T, DuplicatePolicy D>
 inline std::size_t Collection<T, D>::search(const T& item) const
 {
-    return isSorted ? binarySearch(item) : linearSearch(item);
+    bool searched = isSorted ? binarySearch(item) : linearSearch(item);
+    return searched;
 }
 
 #pragma region Search Algorithms
