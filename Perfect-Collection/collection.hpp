@@ -13,7 +13,11 @@
 #include <type_traits>
 #include <limits>
 
+// Policy in which if duplicate values are allowed in the collection.
 enum class DuplicatePolicy {Allow, Unique};
+
+// The mode to determine to remove/replace the first occurrence or all occurrences.
+enum class OccurrenceMode {First, All};
 
 // A vector collection with most of the useful collection functions.
 template <typename T, DuplicatePolicy D = DuplicatePolicy::Unique>
@@ -21,6 +25,7 @@ class Collection
 {
     private:
 
+    // Private variables
     std::vector<T> items;
     bool isSorted = true;
     T min, max;
@@ -46,7 +51,7 @@ class Collection
     bool insertSorted(const T& item);
 
     // Deletion
-    bool remove(const T& item);
+    bool remove(const T& item, OccurrenceMode mode = OccurrenceMode::First);
     bool removeAt(std::size_t index);
     bool pop_front(T& out);
     bool pop_back(T& out);
@@ -74,7 +79,7 @@ class Collection
     // Sorting
     bool sort();
     
-    // Global
+    // Global functions
     const T& front() const;
     const T& back() const;
     bool isEmpty() const;
@@ -206,14 +211,17 @@ inline bool Collection<T, D>::insertSorted(const T& item)
 
 // Finds and removes a value. getSize() is the sentinel returned when search misses.
 template <typename T, DuplicatePolicy D>
-inline bool Collection<T, D>::remove(const T& item)
+inline bool Collection<T, D>::remove(const T& item, OccurrenceMode mode)
 {
-    // checks if the value already exists. if so, remove it
-
-    std::size_t index = search(item);
-
-    if (index != getSize())
+    if (mode == OccurrenceMode::First)
     {
+        std::size_t index = search(item);
+    
+        if (index == getSize())
+        {
+            return false;
+        }
+
         items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
         if (getSize() <= 1)
         {
@@ -221,8 +229,28 @@ inline bool Collection<T, D>::remove(const T& item)
         }
         return true;
     }
+    else
+    {
+        std::size_t index = search(item);
 
-    return false;
+        if (index == getSize())
+        {
+            return false;
+        }
+
+        while (index != getSize())
+        {
+            items.erase(items.begin() + static_cast<typename std::vector<T>::difference_type>(index));
+            index = search(item);
+        }
+
+        if (getSize() <= 1)
+        {
+            isSorted = true;
+        }
+
+        return true;
+    }
 }
 
 // Removes the value at index when the index is within the collection bounds.
