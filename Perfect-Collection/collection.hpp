@@ -96,7 +96,7 @@ class Collection
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::push_front(const T& item)
 {
-    // Check if the collection allows duplicates.
+    // Checks whether the unique policy requires rejecting an existing value.
     if constexpr (D == DuplicatePolicy::Unique)
     {
         if (contains(item))
@@ -124,7 +124,7 @@ inline bool Collection<T, D>::push_front(const T& item)
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::push_back(const T& item)
 {
-    // Check if the collection allows duplicates.
+    // Checks whether the unique policy requires rejecting an existing value.
     if constexpr (D == DuplicatePolicy::Unique)
     {
         if (contains(item))
@@ -152,18 +152,18 @@ inline bool Collection<T, D>::push_back(const T& item)
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::insert(const T& item, std::size_t index)
 {
-    // Check if the collection allows duplicates.
+    if (index > getSize())
+    {
+        return false;
+    }
+
+    // Checks whether the unique policy requires rejecting an existing value.
     if constexpr (D == DuplicatePolicy::Unique)
     {
         if (contains(item))
         {
             return false;
         }
-    }
-
-    if (index > getSize())
-    {
-        return false;
     }
 
     items.insert(items.begin() + static_cast<typename std::vector<T>::difference_type>(index), item);
