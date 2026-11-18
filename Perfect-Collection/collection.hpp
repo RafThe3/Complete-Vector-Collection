@@ -269,18 +269,18 @@ inline bool Collection<T, D>::removeAt(std::size_t index)
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::pop_front(T& out)
 {
-    if (!isEmpty())
+    if (isEmpty())
     {
-        out = front();
-        items.erase(items.begin());
-        if (getSize() <= 1)
-        {
-            isSorted = true;
-        }
-        return true;
+        return false;
     }
 
-    return false;
+    out = front();
+    items.erase(items.begin());
+    if (getSize() <= 1)
+    {
+        isSorted = true;
+    }
+    return true;
 }
 
 // Copies the last value to out, then removes it from the collection.
