@@ -287,18 +287,18 @@ inline bool Collection<T, D>::pop_front(T& out)
 template <typename T, DuplicatePolicy D>
 inline bool Collection<T, D>::pop_back(T& out)
 {
-    if (!isEmpty())
+    if (isEmpty())
     {
-        out = back();
-        items.pop_back();
-        if (getSize() <= 1)
-        {
-            isSorted = true;
-        }
-        return true;
+        return false;
     }
 
-    return false;
+    out = back();
+    items.pop_back();
+    if (getSize() <= 1)
+    {
+        isSorted = true;
+    }
+    return true;
 }
 
 // Removes the first value out of the collection.
